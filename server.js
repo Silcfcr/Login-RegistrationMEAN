@@ -2,23 +2,17 @@ const express = require( 'express' );
 const mongoose = require( 'mongoose' );
 const bcrypt = require( 'bcrypt' );
 const session = require( 'express-session' );
-//const flash = require( 'express-flash' );
+const flash = require( 'express-flash' );
 
 mongoose.connect('mongodb://localhost/users_db', {useNewUrlParser: true});
 
 const {UserModel} = require( './models/userModel' );
-
-// This package is deprecated, use instead the jsonParser integrated within express
-// Look at line 12 for the usage
-//const bodyParser = require( 'body-parser' );
 const app = express();
 
 app.set( 'views', __dirname + '/views' );
 app.set( 'view engine', 'ejs' );
 
-// This code is deprecated, use instead line 10
-//app.use( bodyParser.urlencoded({extended:true}) );
-//app.use( flash );
+app.use( flash() );
 app.use( express.urlencoded({extended:true}) );
 app.use(session({
     secret: 'secret',
@@ -55,8 +49,8 @@ app.post( '/users/addUser', function( request, response ){
                     response.redirect( '/users' );
                 })
                 .catch( err => {
-                    console.log( "Something went wrong!" );
-                    console.log( err );
+                    request.flash( 'registration', 'That username is already in use!' );
+                    response.redirect( '/' );
                 });
         });
 });
@@ -85,12 +79,12 @@ app.post( '/users/login', function( request, response ){
                     response.redirect( '/users' );
                 })
                 .catch( error => {
-                    //request.flash( 'login', error.message );
+                    request.flash( 'login', error.message );
                     response.redirect( '/' );
                 }); 
         })
         .catch( error => {
-            //request.flash( 'login', error.message );
+            request.flash( 'login', error.message );
             response.redirect( '/' );
         });
 });

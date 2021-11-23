@@ -38,6 +38,11 @@
             <button type="submit">
                 Register user
             </button>
+            <div class="error">
+                <% if( messages.registration ){ %>
+                    <%= messages.registration %>
+                <% } %>
+            </div>
         </form>
         <h1>
             Login
@@ -58,6 +63,11 @@
             <button type="submit">
                 Login
             </button>
+            <div class="error">
+                <% if( messages.login ){ %>
+                    <%= messages.login %>
+                <% } %>
+            </div>
         </form>
     </body>
 </html>
