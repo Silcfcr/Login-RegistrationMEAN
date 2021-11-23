@@ -8,8 +8,13 @@
     </head>
     <body>
         <h1>
-            Welcome to the users server
+            Welcome back <%= currentUser.firstName %> <%= currentUser.lastName %> to the users server
         </h1>
+        <form action="/logout" method="POST">
+            <button type="submit">
+                Logout
+            </button>
+        </form>
         <h2>
             List of current users:
         </h2>
@@ -21,30 +26,41 @@
             <% } %>
         </ul>
         <h2>
-            Add new user:
+            Comment something
         </h2>
-        <form method="POST" action="/users/addUser">
+        <form action="/comments/addComment" method="POST">
             <div>
-                <label for="firstName">
-                    First Name: 
+                <label for="title">
+                    Comment title:
                 </label>
-                <input type="text" id="firstName" name="firstName" />
+                <input type="text" id="title" name="title"/>
             </div>
             <div>
-                <label for="lastName">
-                    Last Name: 
+                <label for="content">
+                    Comment content:
                 </label>
-                <input type="text" id="lastName" name="lastName" />
-            </div>
-            <div>
-                <label for="userId">
-                    Id: 
-                </label>
-                <input type="number" id="userId" name="userId" />
+                <textarea id="content" name="content"></textarea>
             </div>
             <button type="submit">
-                Add user
+                Add comment
             </button>
         </form>
+        <h2>
+            All comments by all users
+        </h2>
+        <ul>
+            <% for( let i = 0; i < users.length; i ++ ){ %>
+                <li>
+                    <%= users[i].userName %> :
+                    <ul>
+                        <% for(let j = 0; j < users[i].comments.length; j ++ ){ %>
+                            <li>
+                                <%= users[i].comments[j].title %> : <%= users[i].comments[j].content %>
+                            </li>
+                        <% } %>
+                    </ul> 
+                </li>
+            <% } %>
+        </ul>
     </body>
 </html>

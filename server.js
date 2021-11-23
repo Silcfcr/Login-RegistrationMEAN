@@ -1,5 +1,9 @@
 const express = require( 'express' );
 const mongoose = require( 'mongoose' );
+const bcrypt = require( 'bcrypt' );
+const session = require( 'express-session' );
+//const flash = require( 'express-flash' );
+
 mongoose.connect('mongodb://localhost/users_db', {useNewUrlParser: true});
 
 const {UserModel} = require( './models/userModel' );
@@ -14,33 +18,131 @@ app.set( 'view engine', 'ejs' );
 
 // This code is deprecated, use instead line 10
 //app.use( bodyParser.urlencoded({extended:true}) );
+//app.use( flash );
 app.use( express.urlencoded({extended:true}) );
-const users = [
-    {
-        name : "Michael Miller",
-        id : 123
-    },
-    {
-        name : "Julie Gomez",
-        id : 456
-    },
-    {
-        name : "Roger Martinez",
-        id : 789
-    },
-    {
-        name : "Alex Santos",
-        id : 555
+app.use(session({
+    secret: 'secret',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 60000 * 20 }
+}));
+
+app.get( '/', function( request, response ){
+    response.render( 'login' );
+});
+
+app.post( '/users/addUser', function( request, response ){
+    const userName = request.body.userName;
+    const firstName = request.body.firstName;
+    const lastName = request.body.lastName;
+    const password = request.body.password;
+
+    bcrypt.hash( password, 10 )
+        .then( encryptedPassword => {
+            const newUser = {
+                userName,
+                firstName,
+                lastName,
+                password : encryptedPassword
+            };
+            console.log( newUser );
+            UserModel
+                .createUser( newUser )
+                .then( result => {
+                    request.session.firstName = result.firstName;
+                    request.session.lastName = result.lastName;
+                    request.session.userName = result.userName;
+                    response.redirect( '/users' );
+                })
+                .catch( err => {
+                    console.log( "Something went wrong!" );
+                    console.log( err );
+                });
+        });
+});
+
+app.post( '/users/login', function( request, response ){
+    let userName = request.body.loginUserName;
+    let password = request.body.loginPassword;
+
+    UserModel
+        .getUserById( userName )
+        .then( result => {
+            console.log( "Result", result );
+            if( result === null ){
+                throw new Error( "That user doesn't exist!" );
+            }
+
+            bcrypt.compare( password, result.password )
+                .then( flag => {
+                    if( !flag ){
+                        throw new Error( "Wrong credentials!" );
+                    }
+                    request.session.firstName = result.firstName;
+                    request.session.lastName = result.lastName;
+                    request.session.userName = result.userName;
+
+                    response.redirect( '/users' );
+                })
+                .catch( error => {
+                    //request.flash( 'login', error.message );
+                    response.redirect( '/' );
+                }); 
+        })
+        .catch( error => {
+            //request.flash( 'login', error.message );
+            response.redirect( '/' );
+        });
+});
+
+app.post( '/comments/addComment', function( request, response ){
+    if( request.session.userName === undefined ){
+        response.redirect( '/' );
     }
-];
+    else{
+        let title = request.body.title;
+        let content = request.body.content;
+        let userName = request.session.userName;
+
+        UserModel
+            .getUserById( userName )
+            .then( userResult => {
+                let newComment = {
+                    title,
+                    content
+                };
+                UserModel
+                    .updateUserComment( userResult._id, newComment )
+                    .then( result => {
+                        response.redirect( '/users' );
+                    });
+            });
+    }
+});
+
+app.post( '/logout', function( request, response ){
+    request.session.destroy();
+    response.redirect( '/' ); 
+});
 
 app.get( '/users', function( request, response ){
-    UserModel
-        .getUsers()
-        .then( data => {
-            console.log( data );
-            response.render( 'index', { users : data } );
-        });  
+    if( request.session.userName === undefined ){
+        response.redirect( '/' );
+    }
+    else{
+        UserModel
+            .getUsers()
+            .then( data => {
+                console.log( data );
+                let currentUser = {
+                    firstName : request.session.firstName, 
+                    lastName : request.session.lastName,
+                    userName : request.session.userName
+                }
+                response.render( 'index', { users : data, currentUser } );
+            }); 
+    }
+  
 });
 
 app.get( '/users/getById', function( request, response ){
@@ -75,32 +177,7 @@ app.get( '/users/:identifier', function( request, response ){
         });
 });
 
-app.post( '/users/addUser', function( request, response ){
-    console.log( request.body );
-    const id = Number(request.body.userId);
-    const firstName = request.body.firstName;
-    const lastName = request.body.lastName;
 
-    // Run validations to see if the 'id' is not already in the list
-    const newUser = {
-        id,
-        firstName,
-        lastName
-    };
-    console.log( newUser );
-    UserModel
-        .createUser( newUser )
-        .then( result => {
-            console.log( result );
-        })
-        .catch( err => {
-            console.log( "Something went wrong!" );
-            console.log( err );
-        })
-
-    response.redirect( '/users' );
-});
-
-app.listen( 8080, function(){
-    console.log( "The users server is running in port 8080." );
+app.listen( 8181, function(){
+    console.log( "The users server is running in port 8181." );
 });
