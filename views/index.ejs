@@ -25,42 +25,5 @@
                 </li>
             <% } %>
         </ul>
-        <h2>
-            Comment something
-        </h2>
-        <form action="/comments/addComment" method="POST">
-            <div>
-                <label for="title">
-                    Comment title:
-                </label>
-                <input type="text" id="title" name="title"/>
-            </div>
-            <div>
-                <label for="content">
-                    Comment content:
-                </label>
-                <textarea id="content" name="content"></textarea>
-            </div>
-            <button type="submit">
-                Add comment
-            </button>
-        </form>
-        <h2>
-            All comments by all users
-        </h2>
-        <ul>
-            <% for( let i = 0; i < users.length; i ++ ){ %>
-                <li>
-                    <%= users[i].userName %> :
-                    <ul>
-                        <% for(let j = 0; j < users[i].comments.length; j ++ ){ %>
-                            <li>
-                                <%= users[i].comments[j].title %> : <%= users[i].comments[j].content %>
-                            </li>
-                        <% } %>
-                    </ul> 
-                </li>
-            <% } %>
-        </ul>
     </body>
 </html>

@@ -4,7 +4,7 @@ const bcrypt = require( 'bcrypt' );
 const session = require( 'express-session' );
 const flash = require( 'express-flash' );
 
-mongoose.connect('mongodb://localhost/users_db', {useNewUrlParser: true});
+mongoose.connect('mongodb://localhost/login_and_registration)', {useNewUrlParser: true});
 
 const {UserModel} = require( './models/userModel' );
 const app = express();
@@ -26,18 +26,30 @@ app.get( '/', function( request, response ){
 });
 
 app.post( '/users/addUser', function( request, response ){
-    const userName = request.body.userName;
+    const email = request.body.email;
     const firstName = request.body.firstName;
     const lastName = request.body.lastName;
     const password = request.body.password;
+    const birthday = request.body.birthday;
+
+    function validateEmail(email) {
+        const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(String(email).toLowerCase());
+    }
+
+    if (validateEmail(email) === false){
+        request.flash( 'registration', 'The email is not valid!' );
+        response.redirect( '/' );
+    }
 
     bcrypt.hash( password, 10 )
         .then( encryptedPassword => {
             const newUser = {
-                userName,
+                email,
                 firstName,
                 lastName,
-                password : encryptedPassword
+                password : encryptedPassword,
+                birthday,
             };
             console.log( newUser );
             UserModel
@@ -45,26 +57,25 @@ app.post( '/users/addUser', function( request, response ){
                 .then( result => {
                     request.session.firstName = result.firstName;
                     request.session.lastName = result.lastName;
-                    request.session.userName = result.userName;
                     response.redirect( '/users' );
                 })
                 .catch( err => {
-                    request.flash( 'registration', 'That username is already in use!' );
+                    request.flash( 'registration', 'That email is already in use!' );
                     response.redirect( '/' );
                 });
         });
 });
 
 app.post( '/users/login', function( request, response ){
-    let userName = request.body.loginUserName;
+    let email = request.body.email;
     let password = request.body.loginPassword;
 
     UserModel
-        .getUserById( userName )
+        .getUserByEmail( email )
         .then( result => {
-            console.log( "Result", result );
+            console.log( "Result of get user by email", result );
             if( result === null ){
-                throw new Error( "That user doesn't exist!" );
+                throw new Error( "That email doesn't exist!" );
             }
 
             bcrypt.compare( password, result.password )
@@ -74,8 +85,6 @@ app.post( '/users/login', function( request, response ){
                     }
                     request.session.firstName = result.firstName;
                     request.session.lastName = result.lastName;
-                    request.session.userName = result.userName;
-
                     response.redirect( '/users' );
                 })
                 .catch( error => {
@@ -89,30 +98,6 @@ app.post( '/users/login', function( request, response ){
         });
 });
 
-app.post( '/comments/addComment', function( request, response ){
-    if( request.session.userName === undefined ){
-        response.redirect( '/' );
-    }
-    else{
-        let title = request.body.title;
-        let content = request.body.content;
-        let userName = request.session.userName;
-
-        UserModel
-            .getUserById( userName )
-            .then( userResult => {
-                let newComment = {
-                    title,
-                    content
-                };
-                UserModel
-                    .updateUserComment( userResult._id, newComment )
-                    .then( result => {
-                        response.redirect( '/users' );
-                    });
-            });
-    }
-});
 
 app.post( '/logout', function( request, response ){
     request.session.destroy();
@@ -120,7 +105,7 @@ app.post( '/logout', function( request, response ){
 });
 
 app.get( '/users', function( request, response ){
-    if( request.session.userName === undefined ){
+    if( request.session.firstName === undefined ){
         response.redirect( '/' );
     }
     else{
@@ -131,46 +116,11 @@ app.get( '/users', function( request, response ){
                 let currentUser = {
                     firstName : request.session.firstName, 
                     lastName : request.session.lastName,
-                    userName : request.session.userName
                 }
                 response.render( 'index', { users : data, currentUser } );
             }); 
     }
-  
 });
-
-app.get( '/users/getById', function( request, response ){
-    let id = Number( request.query.id );
-
-    UserModel
-        .getUserById( id )
-        .then( result => {
-            if( result === null ){
-                throw new Error( "That user doesn't exist" );
-            }
-            response.render( 'user', { found: true, user: result } );
-        })
-        .catch( error => {
-            response.render( 'user', { found: false } );
-        });
-});
-
-app.get( '/users/:identifier', function( request, response ){
-    let id = Number( request.params.identifier );
-
-    UserModel
-        .getUserById( id )
-        .then( result => {
-            if( result === null ){
-                throw new Error( "That user doesn't exist" );
-            }
-            response.render( 'user', { found: true, user: result } );
-        })
-        .catch( error => {
-            response.render( 'user', { found: false } );
-        });
-});
-
 
 app.listen( 8181, function(){
     console.log( "The users server is running in port 8181." );

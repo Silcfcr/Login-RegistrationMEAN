@@ -1,6 +1,10 @@
 const mongoose = require( 'mongoose' );
-const {CommentSchema, CommentModel} = require( './commentModel' );
 const UserSchema = new mongoose.Schema({
+    email : {
+        type : String,
+        required : true,
+        unique : true
+    },
     firstName : {
         type : String,
         required : true,
@@ -13,16 +17,15 @@ const UserSchema = new mongoose.Schema({
         minlength : 3,
         maxlength : 20
     },
-    userName : {
-        type : String,
-        required : true,
-        unique : true
-    },
     password : {
         type : String,
         required : true
     },
-    comments : [ CommentSchema ]
+    birthday : {
+        type: Date,
+        required : true
+    }
+    
 });
 
 const User = mongoose.model( 'users', UserSchema );
@@ -34,15 +37,9 @@ const UserModel = {
     getUsers : function(){
         return User.find();
     },
-    getUserById : function( userName ){
-        return User.findOne({ userName });
+    getUserByEmail : function( email ){
+        return User.findOne({ email });
     },
-    updateUserComment : function( id, newComment ){
-        return CommentModel.addComment( newComment )
-            .then( result => {
-                return User.findByIdAndUpdate({_id: id}, {$push: {comments: result}});
-            });
-    }
 };
 
 module.exports = {UserModel};

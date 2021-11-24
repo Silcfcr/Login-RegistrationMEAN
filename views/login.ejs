@@ -12,6 +12,12 @@
         </h1>
         <form method="POST" action="/users/addUser">
             <div>
+                <label for="email">
+                    Email 
+                </label>
+                <input type="text" id="email" name="email" />
+            </div>
+            <div>
                 <label for="firstName">
                     First Name: 
                 </label>
@@ -24,16 +30,16 @@
                 <input type="text" id="lastName" name="lastName" />
             </div>
             <div>
-                <label for="userName">
-                    User name: 
-                </label>
-                <input type="text" id="userName" name="userName" />
-            </div>
-            <div>
                 <label for="password">
                     Password: 
                 </label>
                 <input type="password" id="password" name="password" />
+            </div>
+            <div>
+                <label for="birthday">
+                    Birthday 
+                </label>
+                <input type="date" id="birthday" name="birthday" />
             </div>
             <button type="submit">
                 Register user
@@ -49,16 +55,16 @@
         </h1>
         <form method="POST" action="/users/login">
             <div>
-                <label for="loginUserName">
-                    User name: 
+                <label for="email">
+                    Email:
                 </label>
-                <input type="text" id="loginUserName" name="loginUserName" />
+                <input type="text" id="email" name="email" />
             </div>
             <div>
                 <label for="loginPassword">
                     Password: 
                 </label>
-                <input type="password" id="loginPassword" name="loginPassword" />
+                <input type="text" id="loginPassword" name="loginPassword" />
             </div>
             <button type="submit">
                 Login
